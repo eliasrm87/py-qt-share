@@ -101,6 +101,11 @@ class GUI(QtGui.QWidget):
          self.isActive = True
          
          path_select = self.pathBox.text()        
+
+         # Adicionado por Jimmy Olano: soporte a caracteres en utf-8 (acentos castellano)
+         reload(sys)  
+         sys.setdefaultencoding('utf8')
+         # Fin de la adición.
          os.chdir(path_select)
                
          self.startBtn.setText("Stop")
