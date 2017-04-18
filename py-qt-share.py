@@ -1,70 +1,69 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 # -*- coding: utf-8 -*-
 
 import sys
-import SocketServer
-import BaseHTTPServer
-import SimpleHTTPServer
+import socketserver
+from http.server import *
 import threading
 import webbrowser
 import time
 import os
 
-from PyQt4 import QtGui
+from PyQt5.QtWidgets import *
 
-def handle_server(port, obj, sec):        
-   handler = SimpleHTTPServer.SimpleHTTPRequestHandler
-   
+def handle_server(port, obj, sec):
+   handler = SimpleHTTPRequestHandler
+
    try:
-      httpd = SocketServer.TCPServer(("", port), handler)
+      httpd = socketserver.TCPServer(("", port), handler)
       httpd.timeout = 10
-      
+
       url = "http://%s:%s" % (obj.ip, port)
-      obj.statusLbl.setText("Status: %s %s" % ("Start Server", url))        
+      obj.statusLbl.setText("Status: %s %s" % ("Start Server", url))
       webbrowser.open(url)
-      
+
       while obj.isActive:
          try:
             httpd.handle_request()
          except:
-            obj.statusLbl.setText("Status: Ups we're  problems")
-      
+            obj.statusLbl.setText("Status: Ups we're problems")
+
       httpd.server_close()
       obj.statusLbl.setText("Status: Off")
 
-   except:
+   except: # We should distinguish here between different kind of errors
       for i in range(sec):
          if not obj.isActive: break
          obj.statusLbl.setText("Status: Port busy... wating %s seconds" % (sec - i) )
          time.sleep(1)
-      
+
       if obj.isActive:
          handle_server(port, obj, sec + 5)
       else:
          obj.statusLbl.setText("Status: Off")
 
-         
-class GUI(QtGui.QWidget):
-    
+
+class GUI(QWidget):
+
    def __init__(self):
       super(GUI, self).__init__()
-      
+
       self.initUI()
-      
+
    def __del__(self):
       self.isActive = False
-        
+
    def initUI(self):
 
-      grid = QtGui.QGridLayout()
+      grid = QGridLayout()
 
-      self.pathLbl   = QtGui.QLabel("Path: ")
-      self.portLbl   = QtGui.QLabel("HTTP port: ")
-      self.pathBox   = QtGui.QLineEdit(".")
-      self.portBox   = QtGui.QSpinBox()
-      self.browseBtn = QtGui.QPushButton("...")
-      self.startBtn  = QtGui.QPushButton("Start")
-      self.statusLbl = QtGui.QLabel("Status: Off")
+      self.pathLbl   = QLabel("Path: ")
+      self.portLbl   = QLabel("HTTP port: ")
+      self.pathBox   = QLineEdit(".")
+      self.portBox   = QSpinBox()
+      self.browseBtn = QPushButton("...")
+      self.startBtn  = QPushButton("Start")
+      self.statusLbl = QLabel("Status: Off")
 
       grid.addWidget(self.pathLbl,   0, 0, 1, 1)
       grid.addWidget(self.pathBox,   0, 1, 1, 2)
@@ -74,8 +73,8 @@ class GUI(QtGui.QWidget):
       grid.addWidget(self.startBtn,  1, 2, 1, 1)
       grid.addWidget(self.statusLbl, 2, 0, 1, 3)
 
-      self.setLayout(grid)   
-         
+      self.setLayout(grid)
+
       self.portBox.setMinimum(1025)
       self.portBox.setMaximum(65535)
       self.portBox.setValue(8000)
@@ -88,40 +87,35 @@ class GUI(QtGui.QWidget):
       self.startBtn.pressed.connect(self.start)
 
       self.move(300, 150)
-      self.setWindowTitle('PyShare')    
+      self.setWindowTitle('PyShare')
       self.show()
 
    def selFolder(self):
-      self.pathBox.setText(QtGui.QFileDialog.getExistingDirectory())
-      
-      
-   def start(self):        
+      self.pathBox.setText(QFileDialog.getExistingDirectory())
+
+
+   def start(self):
       if self.isActive == False:
          self.port = int(self.portBox.value())
          self.isActive = True
-         
-         path_select = self.pathBox.text()        
 
-         # Adicionado por Jimmy Olano: soporte a caracteres en utf-8 (acentos castellano)
-         reload(sys)  
-         sys.setdefaultencoding('utf8')
-         # Fin de la adición.
+         path_select = self.pathBox.text()
+
          os.chdir(path_select)
-               
+
          self.startBtn.setText("Stop")
-         
+
          self.threadserver = threading.Thread(target=handle_server, args=(self.port, self, 10, ))
          self.threadserver.start()
-         
-      else:            
+
+      else:
          self.isActive = False
          self.startBtn.setText("Start")
          self.statusLbl.setText("Status: %s" % ("Stopping Server..."))
-         webbrowser.open("http://127.0.0.1:%s" % self.port)
 
-        
-def main(): 
-   app = QtGui.QApplication(sys.argv)
+
+def main():
+   app = QApplication(sys.argv)
    ex = GUI()
    sys.exit(app.exec_())
 
